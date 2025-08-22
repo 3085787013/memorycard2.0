@@ -1,0 +1,115 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>记忆翻牌 2.0</title>
+<style>
+  /* 通用 */
+  *{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif}
+  html,body{height:100%;background:#222;color:#fff;display:flex;align-items:center;justify-content:center}
+  .screen{display:none;flex-direction:column;align-items:center;gap:20px}
+  .screen.active{display:flex}
+  h1{font-size:2.5em}
+  button{padding:12px 28px;font-size:1.2em;border:none;border-radius:8px;background:#5c5;color:#fff;cursor:pointer}
+  button:hover{background:#4a4}
+
+  /* 游戏区 */
+  #gameScreen{flex-direction:column}
+  #board{display:grid;grid-template-columns:repeat(4,90px);gap:10px}
+  .card{width:90px;height:90px;border-radius:8px;background:#444;cursor:pointer;font-size:40px;color:transparent;display:flex;align-items:center;justify-content:center;transition:transform .3s}
+  .card.flipped{transform:rotateY(180deg);background:#fff;color:#222}
+  .card.done{visibility:hidden}
+
+  #endText{
+    font:900 5vw/1.2 sans-serif;
+    background:linear-gradient(90deg,red,orange,yellow,green,blue,indigo,violet,red);
+    background-size:200% auto;
+    -webkit-background-clip:text;
+    color:transparent;
+    animation:slide 3s linear infinite;
+  }
+    @keyframes slide{
+    to{background-position:200% center;}
+  }
+</style>
+</head>
+<body>
+
+<!-- 1. 开始界面 -->
+<div id="startScreen" class="screen active">
+  <h1>记忆翻牌</h1>
+  <button onclick="startGame()">开始游戏</button>
+</div>
+
+<!-- 2. 游戏界面 -->
+<div id="gameScreen" class="screen">
+  <div id="board"></div>
+</div>
+
+<!-- 3. 结束界面 -->
+<div id="endScreen" class="screen">
+  <h1 id="endText">恭喜你！通关了</h1>
+  <div>但是没奖励</div>
+  <button onclick="resetGame()">要不要再玩一次</button>
+</div>
+
+<script>
+/* ====== 数据 ====== */
+const emojis=['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼'];
+let cards, first, lock, matched;
+
+/* ====== 界面切换 ====== */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ====== 开始游戏 ====== */
+function startGame(){
+  showScreen('gameScreen');
+  initGame();
+}
+
+/* ====== 初始化 ====== */
+function initGame(){
+  const board=document.getElementById('board');
+  board.innerHTML='';
+  cards=[...emojis,...emojis].sort(()=>Math.random()-.5);
+  first=null; lock=false; matched=0;
+
+  cards.forEach((e,i)=>{
+    const div=document.createElement('div');
+    div.className='card'; div.textContent=e; div.dataset.idx=i;
+    div.onclick=flip;
+    board.appendChild(div);
+  });
+}
+
+/* ====== 翻牌逻辑 ====== */
+function flip(){
+  if(lock||this.classList.contains('done')||this===first) return;
+  this.classList.add('flipped');
+  if(!first){ first=this; return; }
+  lock=true;
+  if(first.textContent===this.textContent){
+    setTimeout(()=>{ successPair(first,this); reset(); },400);
+  }else{
+    setTimeout(()=>{ failPair(first,this); reset(); },800);
+  }
+}
+function successPair(a,b){
+  a.classList.add('done'); b.classList.add('done'); matched++;
+  if(matched===emojis.length) setTimeout(()=>showScreen('endScreen'),300);
+}
+function failPair(a,b){
+  a.classList.remove('flipped'); b.classList.remove('flipped');
+}
+function reset(){ first=null; lock=false; }
+
+/* ====== 重新开始 ====== */
+function resetGame(){
+  showScreen('startScreen');
+}
+</script>
+</body>
+</html>
